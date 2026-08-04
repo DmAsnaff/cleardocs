@@ -1,0 +1,14 @@
+# Normalize line endings to LF on checkout so shell scripts, Dockerfiles,
+# and entrypoints run correctly inside Linux containers regardless of the
+# host OS (Windows checkouts would otherwise get CRLF and break them).
+* text=auto eol=lf
+
+# Binary assets — never modify.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

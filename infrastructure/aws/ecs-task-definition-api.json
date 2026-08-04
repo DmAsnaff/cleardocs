@@ -1,0 +1,74 @@
+{
+  "_comment": "Replace <AWS_ACCOUNT_ID> and <RDS_ENDPOINT> / <ELASTICACHE_ENDPOINT> with real values before first registration.",
+  "family": "cleardocs-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/cleardocs-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/cleardocs-api-task-role",
+  "containerDefinitions": [
+    {
+      "name": "api",
+      "image": "<AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/cleardocs-backend:latest",
+      "essential": true,
+      "command": [
+        "gunicorn", "config.asgi:application",
+        "-k", "uvicorn.workers.UvicornWorker",
+        "--bind", "0.0.0.0:8000",
+        "--workers", "2",
+        "--timeout", "120",
+        "--access-logfile", "-"
+      ],
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "DJANGO_SETTINGS_MODULE", "value": "config.settings.production" },
+        { "name": "POSTGRES_HOST",          "value": "<RDS_ENDPOINT>" },
+        { "name": "POSTGRES_DB",            "value": "cleardocs" },
+        { "name": "POSTGRES_PORT",          "value": "5432" },
+        { "name": "AWS_S3_REGION",          "value": "us-east-1" },
+        { "name": "LLM_PROVIDER",           "value": "openai" },
+        { "name": "ALLOWED_HOST",           "value": "api.cleardocs.app" },
+        { "name": "FRONTEND_URL",           "value": "https://cleardocs.app" }
+      ],
+      "secrets": [
+        { "name": "SECRET_KEY",            "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:cleardocs/prod/secret-key" },
+        { "name": "POSTGRES_USER",         "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:cleardocs/prod/db-username" },
+        { "name": "POSTGRES_PASSWORD",     "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:cleardocs/prod/db-password" },
+        { "name": "REDIS_URL",             "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:cleardocs/prod/redis-url" },
+        { "name": "OPENAI_API_KEY",        "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:cleardocs/prod/openai-api-key" },
+        { "name": "AWS_ACCESS_KEY_ID",     "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:cleardocs/prod/aws-access-key-id" },
+        { "name": "AWS_SECRET_ACCESS_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:cleardocs/prod/aws-secret-access-key" },
+        { "name": "AWS_S3_BUCKET",         "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:cleardocs/prod/s3-bucket" },
+        { "name": "SENTRY_DSN",            "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:cleardocs/prod/sentry-dsn" },
+        { "name": "MAILGUN_API_KEY",       "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:cleardocs/prod/mailgun-api-key" },
+        { "name": "MAILGUN_DOMAIN",        "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:cleardocs/prod/mailgun-domain" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group":         "/ecs/cleardocs-api",
+          "awslogs-region":        "us-east-1",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group":  "true"
+        }
+      },
+      "healthCheck": {
+        "command":     ["CMD-SHELL", "curl -sf http://localhost:8000/health/ || exit 1"],
+        "interval":    30,
+        "timeout":     5,
+        "retries":     3,
+        "startPeriod": 60
+      },
+      "readonlyRootFilesystem": false,
+      "ulimits": [
+        { "name": "nofile", "softLimit": 65536, "hardLimit": 65536 }
+      ]
+    }
+  ]
+}

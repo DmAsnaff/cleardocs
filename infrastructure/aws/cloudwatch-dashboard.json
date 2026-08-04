@@ -1,0 +1,125 @@
+{
+  "widgets": [
+    {
+      "type": "text",
+      "properties": {
+        "markdown": "# ClearDocs Production Dashboard\nRegion: us-east-1 | Cluster: cleardocs-prod\n\n[API Logs](https://console.aws.amazon.com/cloudwatch/home#logsV2:log-groups/log-group/$252Fecs$252Fcleardocs-api) | [Worker Logs](https://console.aws.amazon.com/cloudwatch/home#logsV2:log-groups/log-group/$252Fecs$252Fcleardocs-worker)"
+      }
+    },
+
+    {
+      "type": "metric",
+      "properties": {
+        "title": "API Service — CPU & Memory",
+        "view": "timeSeries",
+        "stat": "Average",
+        "period": 60,
+        "metrics": [
+          ["AWS/ECS", "CPUUtilization",    "ServiceName", "cleardocs-api",    "ClusterName", "cleardocs-prod", {"label": "API CPU %", "color": "#1f77b4"}],
+          ["AWS/ECS", "MemoryUtilization", "ServiceName", "cleardocs-api",    "ClusterName", "cleardocs-prod", {"label": "API Memory %", "color": "#aec7e8"}],
+          ["AWS/ECS", "CPUUtilization",    "ServiceName", "cleardocs-worker", "ClusterName", "cleardocs-prod", {"label": "Worker CPU %", "color": "#ff7f0e"}],
+          ["AWS/ECS", "MemoryUtilization", "ServiceName", "cleardocs-worker", "ClusterName", "cleardocs-prod", {"label": "Worker Memory %", "color": "#ffbb78"}]
+        ],
+        "yAxis": { "left": { "min": 0, "max": 100 } },
+        "annotations": {
+          "horizontal": [{ "label": "Alert threshold", "value": 80, "color": "#d62728" }]
+        }
+      }
+    },
+
+    {
+      "type": "metric",
+      "properties": {
+        "title": "ALB — Request Latency (p50 / p99)",
+        "view": "timeSeries",
+        "stat": "p50",
+        "period": 60,
+        "metrics": [
+          ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "app/cleardocs-alb/<LOAD_BALANCER_ID>", {"stat": "p50", "label": "p50 latency", "color": "#2ca02c"}],
+          ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "app/cleardocs-alb/<LOAD_BALANCER_ID>", {"stat": "p99", "label": "p99 latency", "color": "#d62728"}]
+        ],
+        "annotations": {
+          "horizontal": [
+            { "label": "p99 SLO (3s)", "value": 3, "color": "#d62728" }
+          ]
+        }
+      }
+    },
+
+    {
+      "type": "metric",
+      "properties": {
+        "title": "ALB — HTTP 5xx Error Rate",
+        "view": "timeSeries",
+        "period": 60,
+        "metrics": [
+          ["AWS/ApplicationELB", "HTTPCode_Target_5XX_Count", "LoadBalancer", "app/cleardocs-alb/<LOAD_BALANCER_ID>", {"stat": "Sum", "label": "5xx count", "color": "#d62728"}],
+          ["AWS/ApplicationELB", "RequestCount",              "LoadBalancer", "app/cleardocs-alb/<LOAD_BALANCER_ID>", {"stat": "Sum", "label": "Total requests", "color": "#1f77b4", "yAxis": "right"}]
+        ]
+      }
+    },
+
+    {
+      "type": "metric",
+      "properties": {
+        "title": "RDS PostgreSQL — Connections & CPU",
+        "view": "timeSeries",
+        "period": 60,
+        "metrics": [
+          ["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", "cleardocs-prod", {"stat": "Average", "label": "DB connections", "color": "#9467bd"}],
+          ["AWS/RDS", "CPUUtilization",      "DBInstanceIdentifier", "cleardocs-prod", {"stat": "Average", "label": "DB CPU %",       "color": "#8c564b", "yAxis": "right"}]
+        ],
+        "annotations": {
+          "horizontal": [{ "label": "Connection alert (80)", "value": 80, "color": "#d62728" }]
+        }
+      }
+    },
+
+    {
+      "type": "metric",
+      "properties": {
+        "title": "ElastiCache Redis — Memory & Connections",
+        "view": "timeSeries",
+        "period": 60,
+        "metrics": [
+          ["AWS/ElastiCache", "DatabaseMemoryUsagePercentage", "ReplicationGroupId", "cleardocs-prod", {"stat": "Average", "label": "Memory %", "color": "#e377c2"}],
+          ["AWS/ElastiCache", "CurrConnections",              "ReplicationGroupId", "cleardocs-prod", {"stat": "Average", "label": "Connections", "color": "#7f7f7f", "yAxis": "right"}]
+        ]
+      }
+    },
+
+    {
+      "type": "metric",
+      "properties": {
+        "title": "ECS Task Count — Running Services",
+        "view": "singleValue",
+        "period": 60,
+        "metrics": [
+          ["ECS/ContainerInsights", "RunningTaskCount", "ServiceName", "cleardocs-api",    "ClusterName", "cleardocs-prod", {"stat": "Average", "label": "API tasks"}],
+          ["ECS/ContainerInsights", "RunningTaskCount", "ServiceName", "cleardocs-worker", "ClusterName", "cleardocs-prod", {"stat": "Average", "label": "Worker tasks"}],
+          ["ECS/ContainerInsights", "RunningTaskCount", "ServiceName", "cleardocs-beat",   "ClusterName", "cleardocs-prod", {"stat": "Average", "label": "Beat tasks"}]
+        ]
+      }
+    },
+
+    {
+      "type": "log",
+      "properties": {
+        "title": "Recent API Errors (5xx)",
+        "query": "SOURCE '/ecs/cleardocs-api' | fields @timestamp, message, levelname\n| filter levelname = 'ERROR' or status_code >= 500\n| sort @timestamp desc\n| limit 20",
+        "region": "us-east-1",
+        "view": "table"
+      }
+    },
+
+    {
+      "type": "log",
+      "properties": {
+        "title": "Celery Worker Failures",
+        "query": "SOURCE '/ecs/cleardocs-worker' | fields @timestamp, message\n| filter message like /FAILURE/ or message like /ERROR/\n| sort @timestamp desc\n| limit 20",
+        "region": "us-east-1",
+        "view": "table"
+      }
+    }
+  ]
+}

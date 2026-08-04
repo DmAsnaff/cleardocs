@@ -1,0 +1,43 @@
+{
+  "_comment": "Celery Beat scheduler — always exactly 1 instance. Never scale above 1.",
+  "family": "cleardocs-beat",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/cleardocs-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/cleardocs-worker-task-role",
+  "containerDefinitions": [
+    {
+      "name": "beat",
+      "image": "<AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/cleardocs-backend:latest",
+      "essential": true,
+      "command": [
+        "celery", "-A", "config", "beat",
+        "--loglevel=info",
+        "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"
+      ],
+      "environment": [
+        { "name": "DJANGO_SETTINGS_MODULE", "value": "config.settings.production" },
+        { "name": "POSTGRES_HOST",          "value": "<RDS_ENDPOINT>" },
+        { "name": "POSTGRES_DB",            "value": "cleardocs" },
+        { "name": "POSTGRES_PORT",          "value": "5432" }
+      ],
+      "secrets": [
+        { "name": "SECRET_KEY",        "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:cleardocs/prod/secret-key" },
+        { "name": "POSTGRES_USER",     "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:cleardocs/prod/db-username" },
+        { "name": "POSTGRES_PASSWORD", "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:cleardocs/prod/db-password" },
+        { "name": "REDIS_URL",         "valueFrom": "arn:aws:secretsmanager:us-east-1:<AWS_ACCOUNT_ID>:secret:cleardocs/prod/redis-url" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group":         "/ecs/cleardocs-beat",
+          "awslogs-region":        "us-east-1",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group":  "true"
+        }
+      }
+    }
+  ]
+}
