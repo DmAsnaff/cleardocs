@@ -39,11 +39,12 @@ cp .env.example .env
 #   SECRET_KEY=any-long-random-string
 
 # 3. Start everything
-cd infrastructure
-docker compose up -d
+#    Run from the repo root. The compose file lives in infrastructure/ but
+#    .env is at the root, so pass both -f and --env-file explicitly.
+docker compose -f infrastructure/docker-compose.yml --env-file .env up -d
 
 # 4. Run database migrations
-docker compose exec backend python manage.py migrate
+docker compose -f infrastructure/docker-compose.yml --env-file .env exec backend python manage.py migrate
 
 # 5. Create an admin user (optional)
 docker compose exec backend python manage.py createsuperuser
@@ -111,4 +112,4 @@ LLM_PROVIDER=anthropic # Paid — best quality on long documents
 
 See [TODO.md](TODO.md) for the full build tracker.
 
-Current phase: **Sprint 1 — Project Scaffolding** ✓
+Current state: **Sprints 1–6 code-complete; app boots and backend test suite passes (78 passed).** Sprint 7 code present (not yet runtime-verified); Sprint 8 (AWS) not provisioned.

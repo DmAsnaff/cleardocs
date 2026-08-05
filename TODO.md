@@ -4,6 +4,15 @@ Track progress sprint by sprint. Mark tasks as done by changing `[ ]` to `[x]`.
 
 **Legend:** `[ ]` Not started · `[~]` In progress · `[x]` Done · `[-]` Skipped
 
+> **Build status (2026-08-05):** Repo initialized as a monorepo; first runnable
+> state reached. Initial Django migrations generated for all apps (with a
+> `VectorExtension` op for pgvector), migrations apply cleanly, and the full
+> backend test suite passes (**78 passed**). Sprints 1–6 are code-complete;
+> Sprint 7 code exists but is not yet runtime-verified; Sprint 8 (AWS) not
+> provisioned. Known issues: `groq`/`httpx` version incompatibility breaks live
+> LLM calls (tests use the mock provider); `docker compose` must be run from the
+> repo root with `--env-file .env` because `.env` lives at the root.
+
 ---
 
 ## Phase 1 — Foundation (Weeks 1–2)
@@ -30,7 +39,7 @@ Track progress sprint by sprint. Mark tasks as done by changing `[ ]` to `[x]`.
 - [x] Write `frontend/Dockerfile` (multi-stage: development + production)
 - [x] Write `nginx/Dockerfile` + `nginx/nginx.conf` (reverse proxy + rate limiting)
 - [x] Create `.env.example` with all required variables documented
-- [ ] Verify `docker compose up` starts all services successfully
+- [~] Verify `docker compose up` starts all services successfully (postgres, redis, backend build + migrations verified; frontend/nginx/celery not yet smoke-tested)
 
 **CI/CD**
 - [x] Write `.github/workflows/backend.yml` (pytest + ruff + black + mypy)
@@ -47,7 +56,7 @@ Track progress sprint by sprint. Mark tasks as done by changing `[ ]` to `[x]`.
 
 **Backend**
 - [x] Create `CustomUser` model extending `AbstractBaseUser` in `apps/users/models.py`
-- [ ] Run and apply initial migration (`docker compose exec backend python manage.py makemigrations && migrate`)
+- [x] Run and apply initial migration (`docker compose exec backend python manage.py makemigrations && migrate`) — generated for all apps; pgvector `VectorExtension` added to documents/0001
 - [x] `POST /api/v1/auth/register/` — email + password, uniqueness check
 - [x] Email verification: generate signed token, send via django-anymail (console in dev)
 - [x] `POST /api/v1/auth/login/` — returns access token in body + refresh token in HttpOnly cookie

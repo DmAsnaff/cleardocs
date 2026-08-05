@@ -36,6 +36,10 @@ openai==1.40.0
 anthropic==0.34.0
 groq==0.9.0
 tiktoken==0.7.0
+# Pin httpx: these SDK versions pass `proxies=` to httpx.Client, which was
+# removed in httpx 0.28. Without this pin, pip resolves httpx to 0.28.x and
+# every live LLM call fails with "unexpected keyword argument 'proxies'".
+httpx==0.27.2
 
 # Storage & AWS
 boto3==1.35.0
