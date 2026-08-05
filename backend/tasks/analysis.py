@@ -12,6 +12,7 @@ DocumentAnalysis record. finalise_analysis merges them and marks the doc DONE.
 """
 import json
 import logging
+from decimal import Decimal
 from celery import shared_task
 from tasks.pipeline import push_progress, _mark_failed
 
@@ -92,7 +93,7 @@ def generate_summary(self, document_id: str) -> str:
         analysis.word_count = parsed.get("word_count")
         analysis.model_used = model
         analysis.tokens_used = analysis.tokens_used + tokens
-        analysis.estimated_cost_usd += round(tokens / 1000 * _COST_PER_1K_TOKENS, 6)
+        analysis.estimated_cost_usd += Decimal(str(round(tokens / 1000 * _COST_PER_1K_TOKENS, 6)))
         analysis.save(update_fields=[
             "summary", "simplified_text", "reading_level", "flesch_kincaid_score",
             "key_points", "word_count", "model_used", "tokens_used", "estimated_cost_usd",
@@ -134,7 +135,7 @@ def extract_clauses(self, document_id: str) -> str:
 
         analysis.clauses = parsed.get("clauses", [])
         analysis.tokens_used = analysis.tokens_used + tokens
-        analysis.estimated_cost_usd += round(tokens / 1000 * _COST_PER_1K_TOKENS, 6)
+        analysis.estimated_cost_usd += Decimal(str(round(tokens / 1000 * _COST_PER_1K_TOKENS, 6)))
         analysis.save(update_fields=["clauses", "tokens_used", "estimated_cost_usd"])
 
         add_user_tokens(str(doc.user_id), tokens)
@@ -173,7 +174,7 @@ def extract_risks(self, document_id: str) -> str:
 
         analysis.risks = parsed.get("risks", [])
         analysis.tokens_used = analysis.tokens_used + tokens
-        analysis.estimated_cost_usd += round(tokens / 1000 * _COST_PER_1K_TOKENS, 6)
+        analysis.estimated_cost_usd += Decimal(str(round(tokens / 1000 * _COST_PER_1K_TOKENS, 6)))
         analysis.save(update_fields=["risks", "tokens_used", "estimated_cost_usd"])
 
         add_user_tokens(str(doc.user_id), tokens)
@@ -211,7 +212,7 @@ def extract_dates(self, document_id: str) -> str:
 
         analysis.key_dates = parsed.get("key_dates", [])
         analysis.tokens_used = analysis.tokens_used + tokens
-        analysis.estimated_cost_usd += round(tokens / 1000 * _COST_PER_1K_TOKENS, 6)
+        analysis.estimated_cost_usd += Decimal(str(round(tokens / 1000 * _COST_PER_1K_TOKENS, 6)))
         analysis.save(update_fields=["key_dates", "tokens_used", "estimated_cost_usd"])
 
         add_user_tokens(str(doc.user_id), tokens)
@@ -303,8 +304,14 @@ def finalise_analysis(self, results: list, document_id: str) -> str:
             },
         )
 
-        # Transition to DONE — notify_complete will be called by the pipeline
-        push_progress(document_id, "analysing", 95, "Analysis complete. Preparing your results…")
+        # Transition to DONE here — the chord callback is the reliable
+        # completion point. A chord embedded mid-chain does NOT reliably
+        # propagate the tasks chained after it (notify_complete was being
+        # dropped by Celery's canvas), so the DONE transition must not be
+        # deferred to a later chain step.
+        if doc.status != Document.Status.DONE:
+            doc.transition_to(Document.Status.DONE)
+        push_progress(document_id, "done", 100, "Your document is ready.")
         return document_id
 
     except Exception as exc:
