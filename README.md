@@ -24,41 +24,71 @@ Upload any complex document → get a plain-language explanation, key clauses hi
 - Docker Desktop (with Docker Compose)
 - A free [Groq API key](https://console.groq.com) (no credit card required)
 
-### Steps
+### First-time setup
 
 ```bash
 # 1. Clone
-git clone https://github.com/yourusername/cleardocs.git
+git clone https://github.com/DmAsnaff/cleardocs.git
 cd cleardocs
 
-# 2. Create your .env
+# 2. Create your .env (from the repo root)
 cp .env.example .env
 # Open .env and set:
 #   POSTGRES_PASSWORD=anything-you-like
-#   GROQ_API_KEY=your-groq-key-here
+#   GROQ_API_KEY=your-groq-key-here   (free at https://console.groq.com)
 #   SECRET_KEY=any-long-random-string
-
-# 3. Start everything
-#    Run from the repo root. The compose file lives in infrastructure/ but
-#    .env is at the root, so pass both -f and --env-file explicitly.
-docker compose -f infrastructure/docker-compose.yml --env-file .env up -d
-
-# 4. Run database migrations
-docker compose -f infrastructure/docker-compose.yml --env-file .env exec backend python manage.py migrate
-
-# 5. Create an admin user (optional)
-docker compose exec backend python manage.py createsuperuser
 ```
 
-### Access the services
+## Running the app
+
+Run every command from the repo root (`ClearDoc/`). The compose file lives in
+`infrastructure/` but `.env` is at the root, so pass both `-f` and `--env-file`.
+
+For convenience, set an alias once per terminal:
+
+```bash
+alias dc='docker compose -f infrastructure/docker-compose.yml --env-file .env'
+```
+
+**1. Start Docker Desktop** and wait until it reports "running".
+
+**2. Start the backend stack** (Postgres, Redis, Django API, Celery worker):
+
+```bash
+dc up -d postgres redis backend celery_worker
+# (without the alias:)
+# docker compose -f infrastructure/docker-compose.yml --env-file .env up -d postgres redis backend celery_worker
+```
+
+**3. Start the frontend** (in a second terminal):
+
+```bash
+npm --prefix frontend run dev
+```
+
+**4. Open the app:**
 
 | Service | URL |
 |---|---|
-| Frontend | http://localhost |
-| API | http://localhost/api/v1/ |
-| Django Admin | http://localhost/admin |
-| Celery Flower | http://localhost:5555 |
-| API Docs | http://localhost/api/v1/schema/swagger/ |
+| Frontend (the app) | http://localhost:3000 |
+| API | http://localhost:8000/api/v1/ |
+| Django Admin | http://localhost:8000/admin |
+
+Log in with `e2e@test.local` / `TestPass123!`, or register a new account.
+
+### Notes
+
+- **Migrations** are already applied and persist in the Postgres volume — no need
+  to re-run them. If you ever wipe the volume, run:
+  `dc exec backend python manage.py migrate`
+- **Create an admin user** (optional): `dc exec backend python manage.py createsuperuser`
+- **Stop everything:** `dc down`, then `Ctrl+C` in the frontend terminal.
+- The `nginx` and `frontend` Docker services exist for a full containerised run,
+  but are resource-heavy. Running the frontend with `npm` (step 3) is the
+  recommended path for local development.
+- When running the frontend outside Docker, `frontend/.env.local` points it at the
+  backend directly (`http://localhost:8000`). This file is created for local dev
+  and is gitignored.
 
 ## Development Workflow
 
