@@ -138,6 +138,46 @@ LLM_PROVIDER=openai    # Paid — ~$0.05/document on gpt-4o-mini
 LLM_PROVIDER=anthropic # Paid — best quality on long documents
 ```
 
+## Troubleshooting
+
+**A large document finishes but Summary/Clauses/Dates are empty, or processing
+seems stuck.** You have likely hit a Groq **free-tier limit**:
+
+- **Tokens per minute (TPM):** ~12,000. The pipeline analyses sections
+  sequentially with retry/backoff to stay under this, so large docs just take a
+  little longer.
+- **Tokens per day (TPD):** ~100,000. Once exhausted, every call returns
+  HTTP 429 (`rate_limit_exceeded`) until it resets (midnight UTC). Sections that
+  couldn't run are left empty and the document still completes with whatever
+  succeeded.
+
+  Check the worker logs for `tokens per day (TPD)` to confirm:
+  `dc logs --tail=50 celery_worker`
+
+  Fixes: wait for the daily reset, or upgrade Groq to the paid **Dev tier**
+  (https://console.groq.com/settings/billing), or set `LLM_PROVIDER=openai` /
+  `anthropic` in `.env` with that provider's key.
+
+**Chat says "reconnecting" / live upload progress never updates.** WebSockets
+require the backend to run under **ASGI**. `daphne` is in `INSTALLED_APPS`, so
+`runserver` uses Daphne automatically — confirm the backend log shows
+`Starting ASGI/Daphne` (not `Starting development server`). The upload page also
+polls the status endpoint as a fallback, so processing completes even if the
+socket can't connect.
+
+**The "Original" PDF tab is blank or 404s.** Uploaded files are served under
+`/media/` in development; ensure `DEBUG=True` and that `signed_url` in the API
+response is an absolute `http://localhost:8000/media/...` URL.
+
+**`docker compose` can't find variables / uses blank passwords.** Run it from
+the repo root with `--env-file .env` (see [Running the app](#running-the-app)) —
+`.env` lives at the root, not in `infrastructure/`.
+
+**Login fails with "Something went wrong".** The frontend sends credentials for
+the refresh cookie; the backend must return a specific CORS origin (not `*`).
+Dev settings already handle this via `CORS_ALLOWED_ORIGINS` +
+`CORS_ALLOW_CREDENTIALS`.
+
 ## Sprint Progress
 
 See [TODO.md](TODO.md) for the full build tracker.
