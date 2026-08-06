@@ -18,8 +18,16 @@ MEDIA_URL = "/media/"
 # Lower token budget for dev/testing
 MAX_TOKENS_PER_DOCUMENT = 10_000
 
-# Allow all CORS origins in development
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS in development. The frontend sends credentials (withCredentials: true)
+# to receive the HttpOnly refresh cookie, so we must echo a specific origin and
+# allow credentials — a wildcard "*" origin is rejected by browsers for
+# credentialed requests.
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost",
+]
+CORS_ALLOW_CREDENTIALS = True
 
 # Show full SQL queries in dev
 LOGGING["loggers"]["django.db.backends"] = {
