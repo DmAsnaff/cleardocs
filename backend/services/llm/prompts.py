@@ -25,7 +25,7 @@ Do not include any text outside the JSON object."""
 
 
 def summary_user(extracted_text: str) -> str:
-    return f"Document text:\n\n{extracted_text[:40000]}"
+    return f"Document text:\n\n{extracted_text[:16000]}"
 
 
 def clauses_system(doc_category: str) -> str:
@@ -48,7 +48,7 @@ Do not include any text outside the JSON object."""
 
 
 def clauses_user(extracted_text: str) -> str:
-    return f"Document text:\n\n{extracted_text[:40000]}"
+    return f"Document text:\n\n{extracted_text[:16000]}"
 
 
 def risks_system(doc_category: str) -> str:
@@ -71,7 +71,7 @@ Do not include any text outside the JSON object."""
 
 
 def risks_user(extracted_text: str) -> str:
-    return f"Document text:\n\n{extracted_text[:40000]}"
+    return f"Document text:\n\n{extracted_text[:16000]}"
 
 
 def dates_system() -> str:
@@ -93,4 +93,4 @@ Do not include any text outside the JSON object."""
 
 
 def dates_user(extracted_text: str) -> str:
-    return f"Document text:\n\n{extracted_text[:40000]}"
+    return f"Document text:\n\n{extracted_text[:16000]}"

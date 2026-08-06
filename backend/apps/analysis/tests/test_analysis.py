@@ -98,7 +98,7 @@ class TestAnalysisTasks:
         )
         generate_summary(str(doc.id))  # ensure analysis record exists
 
-        result = finalise_analysis([str(doc.id)] * 4, str(doc.id))
+        result = finalise_analysis(str(doc.id))
         assert result == str(doc.id)
 
     def test_generate_embeddings_stores_vectors(self):

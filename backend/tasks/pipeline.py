@@ -13,7 +13,7 @@ Chain:
   → notify_complete
 """
 import logging
-from celery import chain, group, chord, shared_task
+from celery import chain, shared_task
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
@@ -49,23 +49,22 @@ def process_document(document_id: str) -> None:
     )
     from tasks.pipeline import notify_complete
 
-    # Parallel analysis group + chord callback
-    analysis_chord = chord(
-        group(
-            generate_summary.si(document_id),
-            extract_clauses.si(document_id),
-            extract_risks.si(document_id),
-            extract_dates.si(document_id),
-        ),
-        finalise_analysis.s(document_id),
-    )
-
+    # Analyse SEQUENTIALLY (one LLM call at a time) rather than in a parallel
+    # group. Firing all four analysis calls at once instantly exceeds the Groq
+    # free-tier limit (12k tokens/minute) on large documents, so some sections
+    # would 429 and come back empty. A sequential chain — combined with each
+    # task's retry/backoff on 429 — keeps us under the limit so every section
+    # populates (large docs just take a little longer).
     pipeline = chain(
         validate_and_store.s(document_id),
         extract_text.s(),
         chunk_document.s(),
-        analysis_chord,
+        generate_summary.si(document_id),
+        extract_clauses.si(document_id),
+        extract_risks.si(document_id),
+        extract_dates.si(document_id),
         generate_embeddings.si(document_id),
+        finalise_analysis.si(document_id),
         notify_complete.si(document_id),
     )
     pipeline.apply_async()

@@ -60,10 +60,10 @@ def _parse_json(raw: str, key: str) -> list | dict:
     bind=True,
     name="tasks.analysis.generate_summary",
     queue="llm",
-    max_retries=2,
-    default_retry_delay=60,
+    max_retries=6,
     autoretry_for=(Exception,),
     retry_backoff=True,
+    retry_backoff_max=120,
 )
 def generate_summary(self, document_id: str) -> str:
     from services.llm.prompts import summary_system, summary_user
@@ -112,10 +112,10 @@ def generate_summary(self, document_id: str) -> str:
     bind=True,
     name="tasks.analysis.extract_clauses",
     queue="llm",
-    max_retries=2,
-    default_retry_delay=60,
+    max_retries=6,
     autoretry_for=(Exception,),
     retry_backoff=True,
+    retry_backoff_max=120,
 )
 def extract_clauses(self, document_id: str) -> str:
     from services.llm.prompts import clauses_system, clauses_user
@@ -151,10 +151,10 @@ def extract_clauses(self, document_id: str) -> str:
     bind=True,
     name="tasks.analysis.extract_risks",
     queue="llm",
-    max_retries=2,
-    default_retry_delay=60,
+    max_retries=6,
     autoretry_for=(Exception,),
     retry_backoff=True,
+    retry_backoff_max=120,
 )
 def extract_risks(self, document_id: str) -> str:
     from services.llm.prompts import risks_system, risks_user
@@ -190,10 +190,10 @@ def extract_risks(self, document_id: str) -> str:
     bind=True,
     name="tasks.analysis.extract_dates",
     queue="llm",
-    max_retries=2,
-    default_retry_delay=60,
+    max_retries=6,
     autoretry_for=(Exception,),
     retry_backoff=True,
+    retry_backoff_max=120,
 )
 def extract_dates(self, document_id: str) -> str:
     from services.llm.prompts import dates_system, dates_user
@@ -274,9 +274,9 @@ def generate_embeddings(self, document_id: str) -> str:
     max_retries=2,
     default_retry_delay=30,
 )
-def finalise_analysis(self, results: list, document_id: str) -> str:
+def finalise_analysis(self, document_id: str) -> str:
     """
-    Chord callback. Receives the list of results from the parallel group.
+    Runs after all analysis tasks complete (last step before notify).
     Verifies the analysis record is populated, transitions document to DONE.
     """
     from apps.documents.models import Document
