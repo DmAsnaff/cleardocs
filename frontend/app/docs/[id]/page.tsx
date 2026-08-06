@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
+import dynamic from "next/dynamic";
 import { DocumentLayout } from "@/components/results/DocumentLayout";
-import { PDFViewer } from "@/components/results/PDFViewer";
 import { SimplifiedView } from "@/components/results/SimplifiedView";
 import { ClauseCard } from "@/components/results/ClauseCard";
 import { RiskBadge } from "@/components/results/RiskBadge";
@@ -21,6 +21,13 @@ import { createSession, listSessions } from "@/lib/api/chat";
 import type { Document } from "@/types/document";
 import type { DocumentAnalysis } from "@/types/analysis";
 import type { ChatSessionSummary } from "@/types/chat";
+
+// react-pdf (pdfjs) touches browser-only APIs and cannot be server-rendered,
+// so load the viewer client-side only.
+const PDFViewer = dynamic(
+  () => import("@/components/results/PDFViewer").then((m) => m.PDFViewer),
+  { ssr: false }
+);
 
 export default function DocumentResultsPage() {
   const { id: documentId } = useParams<{ id: string }>();

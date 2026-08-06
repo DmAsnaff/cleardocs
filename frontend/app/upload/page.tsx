@@ -33,7 +33,7 @@ export default function UploadPage() {
       setUploadState("done");
       setProgressData(event);
       // Navigate to results after brief delay
-      setTimeout(() => router.push(`/documents/${event.document_id}`), 1200);
+      setTimeout(() => router.push(`/docs/${event.document_id}`), 1200);
     },
     [router]
   );
