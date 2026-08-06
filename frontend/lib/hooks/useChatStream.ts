@@ -5,7 +5,8 @@ import { getAccessToken } from "@/lib/api/client";
 import { sendMessage } from "@/lib/api/chat";
 import type { ChatMessage, ChatStreamEvent } from "@/types/chat";
 
-const WS_BASE = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost";
+// Strip a trailing "/ws" so we never build ".../ws/ws/chat/...".
+const WS_BASE = (process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000").replace(/\/ws\/?$/, "");
 const RECONNECT_DELAY_MS = 3000;
 const MAX_RECONNECTS = 5;
 

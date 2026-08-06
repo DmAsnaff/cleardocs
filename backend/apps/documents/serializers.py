@@ -24,9 +24,15 @@ class DocumentSerializer(serializers.ModelSerializer):
             return None
         try:
             from services.storage.s3_client import storage_service
-            return storage_service.get_signed_url(obj.s3_key, obj.s3_bucket)
+            url = storage_service.get_signed_url(obj.s3_key, obj.s3_bucket)
         except Exception:
             return None
+        # Local storage returns a root-relative /media/ path; make it absolute
+        # so the frontend (a different origin in dev) can load it.
+        request = self.context.get("request")
+        if url and request and url.startswith("/"):
+            return request.build_absolute_uri(url)
+        return url
 
 
 class DocumentStatusSerializer(serializers.ModelSerializer):

@@ -65,7 +65,7 @@ class DocumentListCreateView(APIView):
 
         paginator = DocumentPagination()
         page = paginator.paginate_queryset(qs, request)
-        serializer = DocumentSerializer(page, many=True)
+        serializer = DocumentSerializer(page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
@@ -124,7 +124,7 @@ class DocumentDetailView(APIView):
 
     def get(self, request, document_id):
         doc = _get_document_or_404(document_id, request.user)
-        return _success(DocumentSerializer(doc).data)
+        return _success(DocumentSerializer(doc, context={"request": request}).data)
 
     def delete(self, request, document_id):
         doc = _get_document_or_404(document_id, request.user)

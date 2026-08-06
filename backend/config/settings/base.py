@@ -11,6 +11,9 @@ DEBUG = False
 ALLOWED_HOSTS = []
 
 DJANGO_APPS = [
+    # daphne must be listed before staticfiles so `runserver` uses the ASGI
+    # (Daphne) server, which is required for WebSockets (chat + live progress).
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
