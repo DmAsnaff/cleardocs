@@ -44,12 +44,33 @@ def _call_llm(system: str, user: str, max_tokens: int = 2048) -> tuple[str, int,
 
 
 def _parse_json(raw: str, key: str) -> list | dict:
-    """Parse LLM output as JSON; return empty structure on failure."""
+    """Parse LLM output as JSON, tolerating markdown fences and surrounding
+    prose (smaller models often wrap JSON in ```json ... ``` or add preamble)."""
+    import re
+
+    s = (raw or "").strip()
+
+    # Strip a leading/trailing markdown code fence if present.
+    if s.startswith("```"):
+        s = re.sub(r"^```(?:json)?\s*", "", s)
+        s = re.sub(r"\s*```$", "", s).strip()
+
     try:
-        return json.loads(raw)
+        return json.loads(s)
     except (json.JSONDecodeError, ValueError):
-        logger.warning("llm_json_parse_failed", extra={"key": key, "raw_snippet": raw[:200]})
-        return {} if key == "summary" else {key: []}
+        pass
+
+    # Fall back to extracting the first JSON object/array substring.
+    for open_ch, close_ch in (("{", "}"), ("[", "]")):
+        start, end = s.find(open_ch), s.rfind(close_ch)
+        if start != -1 and end > start:
+            try:
+                return json.loads(s[start : end + 1])
+            except (json.JSONDecodeError, ValueError):
+                continue
+
+    logger.warning("llm_json_parse_failed", extra={"key": key, "raw_snippet": raw[:200]})
+    return {} if key == "summary" else {key: []}
 
 
 # ---------------------------------------------------------------------------
@@ -103,6 +124,8 @@ def generate_summary(self, document_id: str) -> str:
         logger.info("summary_generated", extra={"document_id": document_id, "tokens": tokens})
     except Exception as exc:
         logger.error("generate_summary_failed", extra={"document_id": document_id, "error": str(exc)})
+        if self.request.retries >= self.max_retries:
+            return document_id  # give up gracefully so the pipeline continues
         raise
 
     return document_id
@@ -142,6 +165,8 @@ def extract_clauses(self, document_id: str) -> str:
         logger.info("clauses_extracted", extra={"document_id": document_id, "count": len(analysis.clauses)})
     except Exception as exc:
         logger.error("extract_clauses_failed", extra={"document_id": document_id, "error": str(exc)})
+        if self.request.retries >= self.max_retries:
+            return document_id  # give up gracefully so the pipeline continues
         raise
 
     return document_id
@@ -181,6 +206,8 @@ def extract_risks(self, document_id: str) -> str:
         logger.info("risks_extracted", extra={"document_id": document_id, "count": len(analysis.risks)})
     except Exception as exc:
         logger.error("extract_risks_failed", extra={"document_id": document_id, "error": str(exc)})
+        if self.request.retries >= self.max_retries:
+            return document_id  # give up gracefully so the pipeline continues
         raise
 
     return document_id
@@ -219,6 +246,8 @@ def extract_dates(self, document_id: str) -> str:
         logger.info("dates_extracted", extra={"document_id": document_id, "count": len(analysis.key_dates)})
     except Exception as exc:
         logger.error("extract_dates_failed", extra={"document_id": document_id, "error": str(exc)})
+        if self.request.retries >= self.max_retries:
+            return document_id  # give up gracefully so the pipeline continues
         raise
 
     return document_id
