@@ -4,6 +4,8 @@ AI document simplifier and multi-language translator for legal, medical, and gov
 
 Upload any complex document → get a plain-language explanation, key clauses highlighted, risk flags, a Q&A chatbot, and translation into 50+ languages. Free. Privacy-first.
 
+📖 **New here?** Read the [Architecture & Technology Guide](docs/ARCHITECTURE.md) — it explains what every technology means (in plain language) and how each feature works end to end.
+
 ## Stack
 
 | Layer | Technology |
