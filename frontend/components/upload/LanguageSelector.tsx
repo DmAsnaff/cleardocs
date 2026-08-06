@@ -18,6 +18,8 @@ const LANGUAGES: Language[] = [
   { code: "ko", name: "Korean", native: "한국어" },
   { code: "ar", name: "Arabic", native: "العربية" },
   { code: "hi", name: "Hindi", native: "हिन्दी" },
+  { code: "ta", name: "Tamil", native: "தமிழ்" },
+  { code: "si", name: "Sinhala", native: "සිංහල" },
   { code: "ru", name: "Russian", native: "Русский" },
   { code: "nl", name: "Dutch", native: "Nederlands" },
   { code: "pl", name: "Polish", native: "Polski" },
