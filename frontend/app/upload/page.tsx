@@ -108,14 +108,6 @@ export default function UploadPage() {
             progress={displayProgress.progress}
             message={displayProgress.message}
           />
-          {uploadState === "error" && (
-            <button
-              onClick={handleReset}
-              className="mt-4 text-sm text-blue-600 underline underline-offset-2"
-            >
-              Try again
-            </button>
-          )}
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -156,7 +148,7 @@ export default function UploadPage() {
             disabled={!file || isProcessing}
             className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {uploadState === "uploading" ? "Uploading…" : "Upload & Analyse"}
+            Upload & Analyse
           </button>
         </form>
       )}

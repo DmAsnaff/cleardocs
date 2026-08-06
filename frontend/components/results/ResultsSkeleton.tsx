@@ -48,7 +48,7 @@ export function AnalysisSkeleton() {
 export function PDFViewerSkeleton() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 bg-muted/20 p-6">
-      <Bone className="h-full w-full max-w-sm rounded-lg" style={{ minHeight: 400 }} />
+      <Bone className="h-full min-h-[400px] w-full max-w-sm rounded-lg" />
       <div className="flex gap-2">
         <Bone className="h-8 w-16 rounded-lg" />
         <Bone className="h-8 w-12 rounded-lg" />
